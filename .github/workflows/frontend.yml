@@ -1,0 +1,55 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
+
+      - name: Zip build folder
+        run: zip -r frontend-build.zip build
+        working-directory: ./frontend
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::<AWS_ACCOUNT_ID>:role/GitHub-OIDC-Role
+          aws-region: <YOUR_REGION>
+
+      - name: Upload to S3
+        run: aws s3 cp frontend-build.zip s3://<YOUR_BUCKET_NAME>/frontend-build.zip
+
+      - name: Deploy to EC2 via SSM
+        run: |
+          aws ssm send-command \
+            --targets "Key=instanceIds,Values=<EC2_INSTANCE_ID>" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy frontend build" \
+            --parameters 'commands=[
+              "unzip -o /tmp/frontend-build.zip -d /var/www/html",
+              "sudo systemctl reload nginx"
+            ]'
