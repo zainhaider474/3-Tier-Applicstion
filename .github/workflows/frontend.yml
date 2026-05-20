@@ -14,7 +14,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup Node.js
@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm install
         working-directory: ./frontend
 
@@ -30,23 +30,23 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-      - name: Zip build folder
+      - name: Zip frontend build
         run: zip -r frontend-build.zip build
         working-directory: ./frontend
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::<AWS_ACCOUNT_ID>:role/GitHub-OIDC-Role
-          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/GitHub-OIDC-Role
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload to S3
-        run: aws s3 cp frontend-build.zip s3://<YOUR_BUCKET_NAME>/frontend-build.zip
+      - name: Upload build to S3
+        run: aws s3 cp frontend-build.zip s3://${{ secrets.AWS_S3_BUCKET }}/frontend-build.zip
 
-      - name: Deploy to EC2 via SSM
+      - name: Deploy frontend to EC2 via SSM
         run: |
           aws ssm send-command \
-            --targets "Key=instanceIds,Values=<EC2_INSTANCE_ID>" \
+            --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy frontend build" \
             --parameters 'commands=[
