@@ -38,7 +38,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::<AWS_ACCOUNT_ID>:role/GitHub-OIDC-Role
-          aws-region: <YOUR_REGION>
+          aws-region: us-east-1
 
       - name: Upload to S3
         run: aws s3 cp frontend-build.zip s3://<YOUR_BUCKET_NAME>/frontend-build.zip
