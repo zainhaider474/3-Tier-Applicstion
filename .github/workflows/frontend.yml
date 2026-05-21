@@ -9,16 +9,16 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    permissions:
+    permissions:          # REQUIRED for OIDC authentication
       id-token: write
       contents: read
 
     steps:
-      # Step 1: Checkout code (on GitHub runner, required for OIDC token)
+      # 1️⃣ Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Configure AWS credentials via OIDC
+      # 2️⃣ Configure AWS credentials via OIDC
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -26,7 +26,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           audience: GitHub-OIDC-Provider
 
-      # Step 3: Build and deploy frontend directly on EC2
+      # 3️⃣ Build and deploy frontend directly on EC2
       - name: Build and Deploy Frontend on EC2
         run: |
           aws ssm send-command \
