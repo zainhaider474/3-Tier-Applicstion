@@ -10,29 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # Step 3: Install frontend dependencies
       - name: Install frontend dependencies
         run: npm install
         working-directory: ./frontend
 
+      # Step 4: Build frontend
       - name: Build frontend
         run: npm run build
         working-directory: ./frontend
 
+      # Step 5: Configure AWS credentials via OIDC
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::141701955118:role/GitHub-OIDC-Role
           aws-region: ${{ secrets.AWS_REGION }}
           audience: GitHub-OIDC-Provider
 
+      # Step 6: Deploy directly to EC2 using SSM
       - name: Deploy frontend to EC2 via SSM
         run: |
           aws ssm send-command \
