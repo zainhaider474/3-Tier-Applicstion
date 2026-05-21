@@ -9,50 +9,38 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    permissions:          # <--- THIS IS REQUIRED
+    permissions:
       id-token: write
       contents: read
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      # Step 3: Install frontend dependencies
-      - name: Install frontend dependencies
-        run: npm install
-        working-directory: ./frontend
-
-      # Step 4: Build frontend
-      - name: Build frontend
-        run: npm run build
-        working-directory: ./frontend
-
-      # Step 5: Configure AWS credentials via OIDC
+      # 2️⃣ Configure AWS credentials via OIDC
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::141701955118:role/GitHub-OIDC-Role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
           audience: GitHub-OIDC-Provider
 
-
-      # Step 6: Deploy frontend directly to EC2 via SSM
-      - name: Deploy frontend to EC2 via SSM
+      # 3️⃣ Deploy frontend build on EC2
+      - name: Build and Deploy Frontend on EC2
         run: |
           aws ssm send-command \
             --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
-            --comment "Deploy frontend build" \
+            --comment "Build frontend and deploy to Nginx" \
             --parameters 'commands=[
+              "cd /home/ubuntu/frontend",
+              "git reset --hard",
+              "git pull origin main",
+              "npm install",
+              "npm run build",
               "rm -rf /var/www/html/*",
-              "cp -r frontend/build/* /var/www/html/",
+              "cp -r build/* /var/www/html/",
               "sudo systemctl reload nginx"
             ]' \
             --region ${{ secrets.AWS_REGION }}
