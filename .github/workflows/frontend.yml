@@ -42,12 +42,17 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           audience: GitHub-OIDC-Provider
 
-      # Step 6: Deploy directly to EC2 using SSM
+
+      # Step 6: Deploy frontend directly to EC2 via SSM
       - name: Deploy frontend to EC2 via SSM
         run: |
           aws ssm send-command \
             --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy frontend build" \
-            --parameters 'commands=["rm -rf /var/www/html/*","cp -r frontend/build/* /var/www/html/"]' \
+            --parameters 'commands=[
+              "rm -rf /var/www/html/*",
+              "cp -r frontend/build/* /var/www/html/",
+              "sudo systemctl reload nginx"
+            ]' \
             --region ${{ secrets.AWS_REGION }}
