@@ -40,7 +40,7 @@ jobs:
               "npm install",
               "npm run build",
               "rm -rf /var/www/html/*",
-              "cp -r build/* /var/www/html/",
+              "cp -r /home/ubuntu/frontend/build/* /var/www/html/",
               "sudo systemctl reload nginx"
             ]' \
             --region ${{ secrets.AWS_REGION }}
