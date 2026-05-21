@@ -9,18 +9,14 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: 20
 
       - name: Install frontend dependencies
         run: npm install
@@ -30,10 +26,6 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-      - name: Zip frontend build
-        run: zip -r frontend-build.zip build
-        working-directory: ./frontend
-
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -41,16 +33,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           audience: GitHub-OIDC-Provider
 
-      - name: Upload build to S3
-        run: aws s3 cp frontend-build.zip s3://${{ secrets.AWS_S3_BUCKET }}/frontend-build.zip
-
       - name: Deploy frontend to EC2 via SSM
         run: |
           aws ssm send-command \
             --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy frontend build" \
-            --parameters 'commands=[
-              "unzip -o /tmp/frontend-build.zip -d /var/www/html",
-              "sudo systemctl reload nginx"
-            ]'
+            --parameters 'commands=["rm -rf /var/www/html/*","cp -r frontend/build/* /var/www/html/"]' \
+            --region ${{ secrets.AWS_REGION }}
