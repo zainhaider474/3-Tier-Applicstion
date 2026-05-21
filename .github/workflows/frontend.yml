@@ -9,20 +9,20 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    permissions:          # Required for OIDC
+    permissions:
       id-token: write
       contents: read
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      # Step 1: Checkout code (on GitHub runner, required for OIDC token)
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       # Step 2: Configure AWS credentials via OIDC
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::141701955118:role/GitHub-OIDC-Role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
           audience: GitHub-OIDC-Provider
 
