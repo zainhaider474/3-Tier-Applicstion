@@ -39,6 +39,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::141701955118:role/GitHub-OIDC-Role
           aws-region: ${{ secrets.AWS_REGION }}
+          audience: GitHub-OIDC-Provider
 
       - name: Upload build to S3
         run: aws s3 cp frontend-build.zip s3://${{ secrets.AWS_S3_BUCKET }}/frontend-build.zip
